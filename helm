@@ -36,8 +36,8 @@ if ! isParamSpecified "--tiller-namespace" $@; then
       NS_DEBUG="helm-wrapper: using kubeconfig namespace $NS"
     else
       # use default tiller namespace
-      NS_DEBUG="helm-wrapper: using default namespace"
-      NS="default"
+      NS_DEBUG="helm-wrapper: using default kube-system namespace"
+      NS="kube-system"
     fi
     NS="--tiller-namespace $NS"
   fi
