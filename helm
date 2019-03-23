@@ -28,19 +28,24 @@ if ! isParamSpecified "--tiller-namespace" $@; then
   # check for TILLER_NAMESPACE env
   if [ -n "$TILLER_NAMESPACE" ]; then
     NS_DEBUG="helm-wrapper: using env TILLER_NAMESPACE $TILLER_NAMESPACE"
+    NS=$TILLER_NAMESPACE
 
   # check kubeconfig namespace
   elif [ ! -z "`kubectl config current-context`" ] ; then
     NS=$(kubectl config view --minify --output 'jsonpath={..namespace}')
     if [ -n "$NS" ]; then
       NS_DEBUG="helm-wrapper: using kubeconfig namespace $NS"
-    else
-      # use default tiller namespace
-      NS_DEBUG="helm-wrapper: using default kube-system namespace"
-      NS="kube-system"
     fi
-    NS="--tiller-namespace $NS"
   fi
+
+  # use default tiller namespace
+  if [ -z "$NS" ]; then
+    NS_DEBUG="helm-wrapper: using (default) kube-system namespace"
+    NS="kube-system"
+  fi
+
+  NS="--tiller-namespace $NS"
+
 else
   NS_DEBUG="helm-wrapper: using --tiller-namespace"
 fi
