@@ -1,5 +1,5 @@
 # helm-wrapper
-**helm-wrapper** is a tool that wraps Kubernetes Helm to simplify helm/tiller version and namespace management.
+**helm-wrapper** is a tool that wraps [Kubernetes Helm](https://github.com/helm/helm) to simplify helm/tiller version and namespace management.
 
 
 ## Installation
