@@ -9,7 +9,39 @@
 
 set -e # exit on any error
 
-# helper function to scan caller-supplied parameters
+# helper to parse caller-supplied values
+parseCommandParams() {
+  PARAMS=""
+  while (( "$#" )); do
+    case "$1" in
+      --tiller-namespace)
+        PARAM_TILLER_NAMESPACE=$2
+        shift 2
+        ;;
+     --kube-context)
+        PARAM_KUBECONTEXT=$2
+        shift 2
+        ;;
+     --kubeconfig)
+        PARAM_KUBECONFIG=$2
+        shift 2
+        ;;
+      --) # end argument parsing
+        shift
+        break
+        ;;
+      *) # preserve positional arguments
+        PARAMS="$PARAMS $1"
+        shift
+        ;;
+    esac
+  done
+  eval set -- "$PARAMS"
+}
+parseCommandParams $@
+
+
+# helper to scan caller-supplied parameters
 isParamSpecified() {
   PARAM=$1
   for P in "${@:2}"; do
@@ -20,38 +52,45 @@ isParamSpecified() {
   return 1 # false
 }
 
-##############
-# Step 1: figure out tiller namespace
 
-# if caller did not specify --tiller-namespace then calculate it
-if ! isParamSpecified "--tiller-namespace" $@; then
-  # check for TILLER_NAMESPACE env
-  if [ -n "$TILLER_NAMESPACE" ]; then
+##############
+# Step 1: figure out tiller namespace; this is required because we ask tiller for its version later.
+
+if [ -n "$PARAM_TILLER_NAMESPACE" ]; then
+  NS_DEBUG="helm-wrapper: using --tiller-namespace $PARAM_TILLER_NAMESPACE"
+  NS=$PARAM_TILLER_NAMESPACE
+else
+  # caller did not specify --tiller-namespace so calculate it
+  if [ -n "$PARAM_KUBECONFIG" ]; then
+    (>&2 echo "helm-wrapper: error, --kubeconfig is unsupported."); exit 1
+  elif [ -n "$PARAM_KUBECONTEXT" ]; then
+    (>&2 echo "helm-wrapper: error, --kube-context is unsupported."); exit 1
+
+  # check TILLER_NAMESPACE in environment
+  elif [ -n "$TILLER_NAMESPACE" ]; then
     NS_DEBUG="helm-wrapper: using env TILLER_NAMESPACE $TILLER_NAMESPACE"
     NS=$TILLER_NAMESPACE
 
-  # check kubeconfig namespace
+  # check default kubeconfig
   elif [ ! -z "`kubectl config current-context`" ] ; then
     NS=$(kubectl config view --minify --output 'jsonpath={..namespace}')
     if [ -n "$NS" ]; then
       NS_DEBUG="helm-wrapper: using kubeconfig namespace $NS"
     fi
   fi
-
-  # use default tiller namespace
-  if [ -z "$NS" ]; then
-    NS_DEBUG="helm-wrapper: using (default) kube-system namespace"
-    NS="kube-system"
-  fi
-
-  NS="--tiller-namespace $NS"
-
-else
-  NS_DEBUG="helm-wrapper: using --tiller-namespace"
 fi
 
+# otherwise use the default tiller namespace, kube-system
+if [ -z "$NS" ]; then
+  NS_DEBUG="helm-wrapper: using (default) kube-system namespace"
+  NS="kube-system"
+fi
+
+NS="--tiller-namespace $NS"
+
+
 ##############
-# Step 2: match tiller version for server calls
+# Step 2: make the helm call, matching tiller version for server calls
 
 # search for commands that require helm and tiller to match
 TILLER_COMMANDS=(ls list history get install upgrade delete status)
@@ -75,13 +114,16 @@ if [ "$TILLER_COMMAND_FOUND" == "true" ]; then
   SERVER_TILLER_VERSION=$(exec $HELM_LATEST $NS version --short | grep Server | sed 's/.*v\(.*\)+.*/\1/')
 
   if [ -n "$SERVER_TILLER_VERSION" ]; then
-      HELM_CURRENT="/usr/local/bin/helm-v$SERVER_TILLER_VERSION"
-      if [ -f "$HELM_CURRENT" ]; then
-        exec $HELM_CURRENT $NS $@
-      else
-        (>&2 echo "helm-wrapper: error, helm client version $SERVER_TILLER_VERSION is not installed.")
-      fi
+    HELM_CURRENT="/usr/local/bin/helm-v$SERVER_TILLER_VERSION"
+    if [ -f "$HELM_CURRENT" ]; then
+      exec $HELM_CURRENT $NS $@
+    else
+      (>&2 echo "helm-wrapper: error, helm client version $SERVER_TILLER_VERSION is not installed.")
+    fi
+  else
+    (>&2 echo "helm-wrapper: error, unable to get tiller version.")
   fi
+
 else
   # execute command using latest helm
 
