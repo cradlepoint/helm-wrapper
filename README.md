@@ -13,6 +13,9 @@
   chmod +x ./helm
   sudo mv ./helm /usr/local/bin/helm
 
-  # install all helm versions that are installed on your various servers
-  ./install-cp-helm.sh
+  # install desired helm versions
+  ./install-helm-versions.sh [ver1 ver2 verN]
+  - e.g., ./install-helm-versions.sh 2.13.0 2.13.1
+  - or, ./install-helm-versions.sh 2.12.1
+
 ```
