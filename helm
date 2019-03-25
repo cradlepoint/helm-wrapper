@@ -9,38 +9,6 @@
 
 set -e # exit on any error
 
-# helper to parse caller-supplied values
-parseCommandParams() {
-  PARAMS=""
-  while (( "$#" )); do
-    case "$1" in
-      --tiller-namespace)
-        PARAM_TILLER_NAMESPACE=$2
-        shift 2
-        ;;
-     --kube-context)
-        PARAM_KUBECONTEXT=$2
-        shift 2
-        ;;
-     --kubeconfig)
-        PARAM_KUBECONFIG=$2
-        shift 2
-        ;;
-      --) # end argument parsing
-        shift
-        break
-        ;;
-      *) # preserve positional arguments
-        PARAMS="$PARAMS $1"
-        shift
-        ;;
-    esac
-  done
-  eval set -- "$PARAMS"
-}
-parseCommandParams $@
-
-
 # helper to scan caller-supplied parameters
 isParamSpecified() {
   PARAM=$1
@@ -52,6 +20,33 @@ isParamSpecified() {
   return 1 # false
 }
 
+# parse caller-supplied values
+PARAMS=""
+while (( "$#" )); do
+  case "$1" in
+    --tiller-namespace)
+      PARAM_TILLER_NAMESPACE=$2
+      shift 2
+      ;;
+    --kube-context)
+      PARAM_KUBECONTEXT=$2
+      shift 2
+      ;;
+    --kubeconfig)
+      PARAM_KUBECONFIG=$2
+      shift 2
+      ;;
+    --) # end argument parsing
+      shift
+      break
+      ;;
+    *) # preserve positional arguments
+      PARAMS="$PARAMS $1"
+      shift
+      ;;
+  esac
+done
+eval set -- "$PARAMS"
 
 ##############
 # Step 1: figure out tiller namespace; this is required because we ask tiller for its version later.
@@ -87,7 +82,6 @@ if [ -z "$NS" ]; then
 fi
 
 NS="--tiller-namespace $NS"
-
 
 ##############
 # Step 2: make the helm call, matching tiller version for server calls
