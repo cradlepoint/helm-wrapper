@@ -101,13 +101,11 @@ HELM_LATEST=$(ls /usr/local/bin/helm-*  | sort -V | tail -1)
 if [ "$TILLER_COMMAND_FOUND" == "true" ]; then
   # execute command using helm that matches tiller version
 
-  # output namespace info
-  (>&2 echo $NS_DEBUG)
-
   # get server tiller version
   SERVER_TILLER_VERSION=$(exec $HELM_LATEST $NS version --short | grep Server | sed 's/.*v\(.*\)+.*/\1/')
 
   if [ -n "$SERVER_TILLER_VERSION" ]; then
+    (>&2 echo "$NS_DEBUG with helm v$SERVER_TILLER_VERSION")
     HELM_CURRENT="/usr/local/bin/helm-v$SERVER_TILLER_VERSION"
     if [ -f "$HELM_CURRENT" ]; then
       exec $HELM_CURRENT $NS $@
@@ -115,14 +113,14 @@ if [ "$TILLER_COMMAND_FOUND" == "true" ]; then
       (>&2 echo "helm-wrapper: error, helm client version $SERVER_TILLER_VERSION is not installed.")
     fi
   else
-    (>&2 echo "helm-wrapper: error, unable to get tiller version.")
+    (>&2 echo "helm-wrapper: error, unable to get tiller version in $NS")
   fi
 
 else
   # execute command using latest helm
 
   # output namespace info for "helm init"
-  if isParamSpecified "init" $@; then (>&2 echo $NS_DEBUG) fi
+  if isParamSpecified "init" $@; then (>&2 echo "$NS_DEBUG with helm $HELM_LATEST") fi
 
   exec $HELM_LATEST $NS $@
 fi
