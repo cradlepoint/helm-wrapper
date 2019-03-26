@@ -25,16 +25,18 @@ For `helm` commands that call the server, **helm-wrapper** must first calculate 
 ## Installation
 
 ```
+  HELM_WRAPPER_VERSION=v1.0.0
+
   # remove old helm if it exists
   sudo rm -rf /usr/local/bin/helm
 
   # install helm wrapper
-  curl https://raw.githubusercontent.com/cradlepoint/helm-wrapper/master/helm -o helm
+  curl https://raw.githubusercontent.com/cradlepoint/helm-wrapper/${HELM_WRAPPER_VERSION}/helm -o helm
   chmod +x ./helm
   sudo mv ./helm /usr/local/bin/helm
 
   # download helm installer
-  curl https://raw.githubusercontent.com/cradlepoint/helm-wrapper/master/install-helm-versions.sh -o install-helm-versions.sh
+  curl https://raw.githubusercontent.com/cradlepoint/helm-wrapper/${HELM_WRAPPER_VERSION}/install-helm-versions.sh -o install-helm-versions.sh
   chmod +x ./install-helm-versions.sh
 
   # use installer to install desired helm versions (https://github.com/helm/helm/releases)
