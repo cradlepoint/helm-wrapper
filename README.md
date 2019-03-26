@@ -2,6 +2,10 @@
 **helm-wrapper** is a tool that wraps [Kubernetes Helm](https://github.com/helm/helm) to simplify helm/tiller version management.
 
 ## Why do I need helm-wrapper?
+When using `helm`, have you ever seen this message, or something similar?
+```
+Error: incompatible versions client[v2.9.1] server[v2.8.2]
+```
 
 Given that:
 * [Helm](https://github.com/helm/helm) has two parts: a client (`helm`) and a server (`tiller`)
