@@ -67,7 +67,7 @@ else
     NS=$TILLER_NAMESPACE
 
   # check default kubeconfig
-  elif [ ! -z "`kubectl config current-context`" ] ; then
+  elif [ ! -z "`kubectl config current-context 2>/dev/null`" ] ; then
     NS=$(kubectl config view --minify --output 'jsonpath={..namespace}')
     if [ -n "$NS" ]; then
       NS_DEBUG="helm-wrapper: using kubeconfig namespace $NS"
