@@ -20,6 +20,10 @@ isParamSpecified() {
   return 1 # false
 }
 
+# save the original params off- the processing we do is destructive if original
+# strings
+SAVED_PARAMS="$@"
+
 # parse caller-supplied values
 PARAMS=""
 while (( "$#" )); do
@@ -53,7 +57,7 @@ eval set -- "$PARAMS"
 
 if [ -n "$PARAM_TILLER_NAMESPACE" ]; then
   NS_DEBUG="helm-wrapper: using --tiller-namespace $PARAM_TILLER_NAMESPACE"
-  NS=$PARAM_TILLER_NAMESPACE
+  NS=""
 else
   # caller did not specify --tiller-namespace so calculate it
   if [ -n "$PARAM_KUBECONFIG" ]; then
@@ -73,15 +77,15 @@ else
       NS_DEBUG="helm-wrapper: using kubeconfig namespace $NS"
     fi
   fi
-fi
 
-# otherwise use the default tiller namespace, kube-system
-if [ -z "$NS" ]; then
-  NS_DEBUG="helm-wrapper: using (default) kube-system namespace"
-  NS="kube-system"
-fi
+  # otherwise use the default tiller namespace, kube-system
+  if [ -z "$NS" ]; then
+    NS_DEBUG="helm-wrapper: using (default) kube-system namespace"
+    NS="kube-system"
+  fi
 
-NS="--tiller-namespace $NS"
+  NS="--tiller-namespace $NS"
+fi
 
 ##############
 # Step 2: make the helm call, matching tiller version for server calls
@@ -108,7 +112,7 @@ if [ "$TILLER_COMMAND_FOUND" == "true" ]; then
     (>&2 echo "$NS_DEBUG with helm v$SERVER_TILLER_VERSION")
     HELM_CURRENT="/usr/local/bin/helm-v$SERVER_TILLER_VERSION"
     if [ -f "$HELM_CURRENT" ]; then
-      exec $HELM_CURRENT $NS $@
+      exec $HELM_CURRENT $NS $SAVED_PARAMS
     else
       (>&2 echo "helm-wrapper: error, helm client version $SERVER_TILLER_VERSION is not installed.")
     fi
@@ -120,7 +124,9 @@ else
   # execute command using latest helm
 
   # output namespace info for "helm init"
-  if isParamSpecified "init" $@; then (>&2 echo "$NS_DEBUG with helm $HELM_LATEST") fi
+  if isParamSpecified "init" $@; then
+    (>&2 echo "$NS_DEBUG with helm $HELM_LATEST")
+  fi
 
-  exec $HELM_LATEST $NS $@
+  exec $HELM_LATEST $NS $SAVED_PARAMS
 fi
