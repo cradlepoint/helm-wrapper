@@ -57,7 +57,7 @@ eval set -- "$PARAMS"
 
 if [ -n "$PARAM_TILLER_NAMESPACE" ]; then
   NS_DEBUG="helm-wrapper: using --tiller-namespace $PARAM_TILLER_NAMESPACE"
-  NS=""
+  NS="$PARAM_TILLER_NAMESPACE"
 else
   # caller did not specify --tiller-namespace so calculate it
   if [ -n "$PARAM_KUBECONFIG" ]; then
@@ -84,8 +84,9 @@ else
     NS="kube-system"
   fi
 
-  NS="--tiller-namespace $NS"
 fi
+
+NS="--tiller-namespace $NS"
 
 ##############
 # Step 2: make the helm call, matching tiller version for server calls
