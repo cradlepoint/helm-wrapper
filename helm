@@ -115,7 +115,27 @@ if [ "$TILLER_COMMAND_FOUND" == "true" ]; then
     if [ -f "$HELM_CURRENT" ]; then
       exec $HELM_CURRENT $NS $SAVED_PARAMS
     else
-      (>&2 echo "helm-wrapper: error, helm client version $SERVER_TILLER_VERSION is not installed.")
+      # determine whether HELM_LATEST is newer than SERVER_TILLER_VERSION
+      newer_found=""
+      HELM_LATEST_VERSION=`echo $HELM_LATEST | sed 's/.*v//'`
+      local_order=`printf "$HELM_LATEST_VERSION\n$SERVER_TILLER_VERSION" | sort -V | grep -n $HELM_LATEST_VERSION | sed 's/:.*//'`
+      tiller_order=`printf "$HELM_LATEST_VERSION\n$SERVER_TILLER_VERSION" | sort -V | grep -n $SERVER_TILLER_VERSION | sed 's/:.*//'`
+      echo "HELM_LATEST_VERSION=$HELM_LATEST_VERSION"
+      local_major=`echo $HELM_LATEST_VERSION | sed 's/\...*//'`
+      echo "local_major=$local_major"
+      tiller_major=`echo $SERVER_TILLER_VERSION | sed 's/\...*//'`
+      echo "local_order=$local_order tiller_order=$tiller_order  local_major=$local_major tiller_major=$tiller_major  HELM_LOCAL=$HELM_LOCAL"
+      if [[ $local_order && $tiller_order && $local_major && $tiller_major ]] ; then
+        if [[ $local_major == $tiller_major && $local_order > $tiller_order && -f "$HELM_LATEST" ]] ; then
+          (>&2 echo "use helm $HELM_LATEST since it is a newer version than tiller $SERVER_TILLER_VERSION")
+          newer_found=true
+          exec $HELM_LATEST $NS $SAVED_PARAMS
+        fi
+      fi
+      if [ "$newer_found" != "true" ] ; then
+        (>&2 echo "helm-wrapper: error, helm client version $SERVER_TILLER_VERSION (or newer) is not installed.")
+        exit 1
+      fi
     fi
   else
     (>&2 echo "helm-wrapper: error, unable to get tiller version in $NS")
