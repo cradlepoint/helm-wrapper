@@ -1,6 +1,10 @@
 # helm-wrapper
 **helm-wrapper** is a tool that wraps [Kubernetes Helm](https://github.com/helm/helm) to simplify helm/tiller version management.
 
+
+> :warning: **Helm v2 is no longer supported.  This repository is now archived.**
+
+
 ## Why do I need helm-wrapper?
 When using `helm`, have you ever seen this message, or something similar?
 ```
